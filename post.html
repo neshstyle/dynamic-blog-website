@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Post — DevLog</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- ── Header ── -->
+  <header>
+    <div class="container">
+      <a href="index.html" class="site-logo">
+        <span class="logo-dot"></span>
+        Dev<span>Log</span>
+      </a>
+      <nav>
+        <a href="index.html">← All Posts</a>
+        <a href="new-post.html" class="nav-cta">+ New Post</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+
+      <!-- Breadcrumb -->
+      <div class="page-header">
+        <div class="breadcrumb">
+          <a href="index.html">Home</a>
+          <span>›</span>
+          <span id="breadcrumbTitle">Post</span>
+        </div>
+      </div>
+
+      <div class="post-view">
+
+        <!-- ── Not Found ── -->
+        <div id="notFound" style="display:none;" class="empty-state">
+          <div class="empty-icon">🔍</div>
+          <h2>Post not found</h2>
+          <p>This post may have been deleted or the link is broken.</p>
+          <a href="index.html" class="btn btn-primary">← Go Home</a>
+        </div>
+
+        <!-- ── Post ── -->
+        <div id="postWrapper" style="display:none;">
+
+          <!-- Action Bar -->
+          <div class="post-actions-bar">
+            <button class="btn btn-outline" id="editBtn"   onclick="enterEditMode()">✏️ Edit</button>
+            <button class="btn btn-primary" id="saveBtn"   onclick="saveEdit()"      style="display:none;">💾 Save Changes</button>
+            <button class="btn btn-ghost"   id="cancelBtn" onclick="cancelEdit()"    style="display:none;">Cancel</button>
+            <div class="spacer"></div>
+            <button class="btn btn-danger"  onclick="openModal()">🗑️ Delete</button>
+          </div>
+
+          <!-- ── View Mode ── -->
+          <div id="viewMode">
+            <div class="post-view-meta">
+              <span class="tag">Post</span>
+              <span id="metaDate"></span>
+              <span id="metaEdited"></span>
+            </div>
+            <h1 class="post-view-title"  id="viewTitle"></h1>
+            <img class="post-view-img"   id="viewImg" src="" alt="" style="display:none;"
+                 onerror="this.style.display='none'" />
+            <div class="post-view-content" id="viewContent"></div>
+          </div>
+
+          <!-- ── Edit Mode (hidden) ── -->
+          <div id="editMode" style="display:none;">
+            <div class="form-group">
+              <label class="edit-field-label" for="editTitle">Title</label>
+              <input type="text" class="edit-title-input" id="editTitle" maxlength="120" />
+              <div class="field-error" id="editTitleError">Title cannot be empty.</div>
+            </div>
+            <div class="form-group">
+              <label class="edit-field-label" for="editContent">Content</label>
+              <textarea class="edit-content-textarea" id="editContent"></textarea>
+              <div class="field-error" id="editContentError">Content cannot be empty.</div>
+            </div>
+          </div>
+
+        </div><!-- /postWrapper -->
+      </div><!-- /post-view -->
+    </div><!-- /container -->
+  </main>
+
+  <!-- ── Footer ── -->
+  <footer>
+    <div class="container">
+      <p>Built by <span>Anesh Maharaj</span> &mdash; CPAN-134 &mdash; Humber College 2026</p>
+    </div>
+  </footer>
+
+  <!-- ── Delete Modal ── -->
+  <div class="modal-overlay" id="deleteModal">
+    <div class="modal">
+      <h3>Delete this post?</h3>
+      <p>This action is permanent and cannot be undone. The post will be removed from local storage.</p>
+      <div class="modal-actions">
+        <button class="btn btn-danger"   onclick="confirmDelete()">Yes, Delete</button>
+        <button class="btn btn-outline"  onclick="closeModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    /* ══════════════════════════════════════
+       STATE
+    ══════════════════════════════════════ */
+    let currentPost = null;
+
+    /* ══════════════════════════════════════
+       HELPERS
+    ══════════════════════════════════════ */
+    function getPosts() {
+      try { return JSON.parse(localStorage.getItem('devlog_posts')) || []; }
+      catch { return []; }
+    }
+
+    function savePosts(posts) {
+      localStorage.setItem('devlog_posts', JSON.stringify(posts));
+    }
+
+    function formatDate(iso) {
+      return new Date(iso).toLocaleDateString('en-CA', {
+        year: 'numeric', month: 'long', day: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+      });
+    }
+
+    function escapeHtml(str) {
+      const d = document.createElement('div');
+      d.textContent = str;
+      return d.innerHTML;
+    }
+
+    function showToast(msg, type) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = 'toast' + (type ? ' toast-' + type : '');
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 3000);
+    }
+
+    function clearEditErrors() {
+      document.querySelectorAll('.field-error').forEach(el => el.classList.remove('visible'));
+      document.querySelectorAll('.input-error').forEach(el => el.classList.remove('input-error'));
+    }
+
+    /* ══════════════════════════════════════
+       LOAD & RENDER POST
+    ══════════════════════════════════════ */
+    function loadPost() {
+      const params = new URLSearchParams(window.location.search);
+      const id     = params.get('id');
+
+      if (!id) { showNotFound(); return; }
+
+      const posts = getPosts();
+      const post  = posts.find(p => p.id === id);
+
+      if (!post) { showNotFound(); return; }
+
+      currentPost = post;
+      renderPost(post);
+    }
+
+    function showNotFound() {
+      document.getElementById('notFound').style.display    = 'block';
+      document.getElementById('postWrapper').style.display = 'none';
+    }
+
+    function renderPost(post) {
+      // Page title & breadcrumb
+      document.title = post.title + ' — DevLog';
+      const short = post.title.length > 45 ? post.title.slice(0, 45) + '…' : post.title;
+      document.getElementById('breadcrumbTitle').textContent = short;
+
+      // Meta
+      document.getElementById('metaDate').textContent   = 'Published ' + formatDate(post.createdAt);
+      document.getElementById('metaEdited').textContent = post.updatedAt
+        ? '· Edited ' + formatDate(post.updatedAt) : '';
+
+      // Title
+      document.getElementById('viewTitle').textContent = post.title;
+
+      // Image
+      const img = document.getElementById('viewImg');
+      if (post.imageUrl) {
+        img.src   = post.imageUrl;
+        img.alt   = post.title;
+        img.style.display = 'block';
+      } else {
+        img.style.display = 'none';
+      }
+
+      // Content
+      document.getElementById('viewContent').textContent = post.content;
+
+      // Show wrapper
+      document.getElementById('notFound').style.display    = 'none';
+      document.getElementById('postWrapper').style.display = 'block';
+    }
+
+    /* ══════════════════════════════════════
+       EDIT MODE
+    ══════════════════════════════════════ */
+    function enterEditMode() {
+      document.getElementById('editTitle').value   = currentPost.title;
+      document.getElementById('editContent').value = currentPost.content;
+
+      document.getElementById('viewMode').style.display = 'none';
+      document.getElementById('editMode').style.display = 'block';
+
+      document.getElementById('editBtn').style.display   = 'none';
+      document.getElementById('saveBtn').style.display   = 'inline-flex';
+      document.getElementById('cancelBtn').style.display = 'inline-flex';
+
+      document.getElementById('editTitle').focus();
+    }
+
+    function cancelEdit() {
+      clearEditErrors();
+      document.getElementById('viewMode').style.display = 'block';
+      document.getElementById('editMode').style.display = 'none';
+
+      document.getElementById('editBtn').style.display   = 'inline-flex';
+      document.getElementById('saveBtn').style.display   = 'none';
+      document.getElementById('cancelBtn').style.display = 'none';
+    }
+
+    function saveEdit() {
+      clearEditErrors();
+
+      const newTitle   = document.getElementById('editTitle').value.trim();
+      const newContent = document.getElementById('editContent').value.trim();
+      let valid = true;
+
+      if (!newTitle) {
+        document.getElementById('editTitleError').classList.add('visible');
+        document.getElementById('editTitle').classList.add('input-error');
+        valid = false;
+      }
+      if (!newContent) {
+        document.getElementById('editContentError').classList.add('visible');
+        document.getElementById('editContent').classList.add('input-error');
+        valid = false;
+      }
+      if (!valid) {
+        showToast('⚠️ Please fix the errors before saving.', 'danger');
+        return;
+      }
+
+      // Update localStorage
+      const posts = getPosts();
+      const idx   = posts.findIndex(p => p.id === currentPost.id);
+      if (idx === -1) { showToast('Post not found.', 'danger'); return; }
+
+      posts[idx].title     = newTitle;
+      posts[idx].content   = newContent;
+      posts[idx].updatedAt = new Date().toISOString();
+      savePosts(posts);
+
+      currentPost = posts[idx];
+      renderPost(currentPost);
+      cancelEdit();
+      showToast('✅ Post updated!', 'success');
+    }
+
+    /* ══════════════════════════════════════
+       DELETE
+    ══════════════════════════════════════ */
+    function openModal()  { document.getElementById('deleteModal').classList.add('open'); }
+    function closeModal() { document.getElementById('deleteModal').classList.remove('open'); }
+
+    function confirmDelete() {
+      const posts   = getPosts();
+      const updated = posts.filter(p => p.id !== currentPost.id);
+      savePosts(updated);
+      window.location.href = 'index.html?deleted=1';
+    }
+
+    /* ══════════════════════════════════════
+       INIT
+    ══════════════════════════════════════ */
+    document.addEventListener('DOMContentLoaded', loadPost);
+  </script>
+
+</body>
+</html>
