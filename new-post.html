@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>New Post — DevLog</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- ── Header ── -->
+  <header>
+    <div class="container">
+      <a href="index.html" class="site-logo">
+        <span class="logo-dot"></span>
+        Dev<span>Log</span>
+      </a>
+      <nav>
+        <a href="index.html">← Home</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+
+      <div class="page-header">
+        <div class="breadcrumb">
+          <a href="index.html">Home</a>
+          <span>›</span>
+          <span>New Post</span>
+        </div>
+        <h1>Create New Post</h1>
+        <p>Write something worth sharing. Fill in the details below.</p>
+      </div>
+
+      <div class="form-card">
+
+        <div class="form-group">
+          <label for="postTitle">Post Title *</label>
+          <input
+            type="text"
+            id="postTitle"
+            placeholder="Enter a clear, compelling title..."
+            maxlength="120"
+          />
+          <div class="field-error" id="titleError">Title is required.</div>
+        </div>
+
+        <div class="form-group">
+          <label for="postContent">Content *</label>
+          <textarea
+            id="postContent"
+            placeholder="Write your post content here..."
+          ></textarea>
+          <div class="field-error" id="contentError">Content is required.</div>
+        </div>
+
+        <div class="form-group">
+          <label for="postImage">
+            Cover Image URL
+            <span style="text-transform:none;color:var(--text-muted);font-weight:400;">(optional)</span>
+          </label>
+          <input
+            type="url"
+            id="postImage"
+            placeholder="https://example.com/image.jpg"
+          />
+          <div class="field-hint">Paste a direct link to an image for a cover photo.</div>
+        </div>
+
+        <hr class="form-divider" />
+
+        <div class="form-actions">
+          <button class="btn btn-primary" onclick="savePost()">Publish Post →</button>
+          <a href="index.html" class="btn btn-outline">Cancel</a>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- ── Footer ── -->
+  <footer>
+    <div class="container">
+      <p>Built by <span>Anesh Maharaj</span> &mdash; CPAN-134 &mdash; Humber College 2026</p>
+    </div>
+  </footer>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    /* ── Helpers ───────────────────────────────────── */
+    function getPosts() {
+      try { return JSON.parse(localStorage.getItem('devlog_posts')) || []; }
+      catch { return []; }
+    }
+
+    function savePosts(posts) {
+      localStorage.setItem('devlog_posts', JSON.stringify(posts));
+    }
+
+    function generateId() {
+      return 'post_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+    }
+
+    function showToast(msg, type) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = 'toast' + (type ? ' toast-' + type : '');
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 3000);
+    }
+
+    function clearErrors() {
+      document.querySelectorAll('.field-error').forEach(el => el.classList.remove('visible'));
+      document.querySelectorAll('.input-error').forEach(el => el.classList.remove('input-error'));
+    }
+
+    /* ── Save Post ─────────────────────────────────── */
+    function savePost() {
+      clearErrors();
+
+      const titleEl   = document.getElementById('postTitle');
+      const contentEl = document.getElementById('postContent');
+      const imageEl   = document.getElementById('postImage');
+
+      const title    = titleEl.value.trim();
+      const content  = contentEl.value.trim();
+      const imageUrl = imageEl.value.trim();
+
+      let valid = true;
+
+      if (!title) {
+        document.getElementById('titleError').classList.add('visible');
+        titleEl.classList.add('input-error');
+        titleEl.focus();
+        valid = false;
+      }
+
+      if (!content) {
+        document.getElementById('contentError').classList.add('visible');
+        contentEl.classList.add('input-error');
+        if (valid) contentEl.focus();
+        valid = false;
+      }
+
+      if (!valid) {
+        showToast('⚠️ Please fill in all required fields.', 'danger');
+        return;
+      }
+
+      const newPost = {
+        id:        generateId(),
+        title:     title,
+        content:   content,
+        imageUrl:  imageUrl || null,
+        createdAt: new Date().toISOString(),
+        updatedAt: null
+      };
+
+      const posts = getPosts();
+      posts.push(newPost);
+      savePosts(posts);
+
+      window.location.href = 'index.html?created=1';
+    }
+
+    /* ── Enter on title jumps to content ───────────── */
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('postTitle').addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          document.getElementById('postContent').focus();
+        }
+      });
+    });
+  </script>
+
+</body>
+</html>
