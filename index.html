@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DevLog — Tech Blog</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- ── Header ── -->
+  <header>
+    <div class="container">
+      <a href="index.html" class="site-logo">
+        <span class="logo-dot"></span>
+        Dev<span>Log</span>
+      </a>
+      <nav>
+        <a href="index.html">Home</a>
+        <a href="new-post.html" class="nav-cta">+ New Post</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ── Hero ── -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-tag">✦ Tech &amp; Development Blog</div>
+      <h1>Ideas. Code.<br><em>Insights.</em></h1>
+      <p>A clean space to write, share, and grow. Your posts, stored locally and always ready.</p>
+      <a href="new-post.html" class="btn btn-primary">Write a Post →</a>
+    </div>
+  </section>
+
+  <!-- ── Posts ── -->
+  <main>
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">All Posts</h2>
+        <span class="post-count" id="postCount">0 posts</span>
+      </div>
+      <div class="posts-grid" id="postsGrid">
+        <!-- Injected by JS -->
+      </div>
+    </div>
+  </main>
+
+  <!-- ── Footer ── -->
+  <footer>
+    <div class="container">
+      <p>Built by <span>Anesh Maharaj</span> &mdash; CPAN-134 &mdash; Humber College 2026</p>
+    </div>
+  </footer>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    /* ── Helpers ───────────────────────────────────── */
+    function getPosts() {
+      try { return JSON.parse(localStorage.getItem('devlog_posts')) || []; }
+      catch { return []; }
+    }
+
+    function formatDate(iso) {
+      return new Date(iso).toLocaleDateString('en-CA', {
+        year: 'numeric', month: 'short', day: 'numeric'
+      });
+    }
+
+    function excerpt(text, max = 130) {
+      return text.length > max ? text.slice(0, max).trimEnd() + '…' : text;
+    }
+
+    function escapeHtml(str) {
+      const d = document.createElement('div');
+      d.textContent = str;
+      return d.innerHTML;
+    }
+
+    function showToast(msg, type) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = 'toast' + (type ? ' toast-' + type : '');
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 3000);
+    }
+
+    /* ── Render ────────────────────────────────────── */
+    function renderPosts() {
+      const posts = getPosts();
+      const grid  = document.getElementById('postsGrid');
+      const count = document.getElementById('postCount');
+
+      count.textContent = posts.length + (posts.length === 1 ? ' post' : ' posts');
+
+      if (posts.length === 0) {
+        grid.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">📝</div>
+            <h2>No posts yet</h2>
+            <p>Be the first to write something. Share your ideas with the world.</p>
+            <a href="new-post.html" class="btn btn-primary">Write Your First Post</a>
+          </div>`;
+        return;
+      }
+
+      const sorted = [...posts].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+      grid.innerHTML = sorted.map(post => `
+        <article class="post-card" onclick="window.location='post.html?id=${post.id}'">
+          <div class="post-card-img">
+            ${post.imageUrl
+              ? `<img src="${escapeHtml(post.imageUrl)}" alt="${escapeHtml(post.title)}" onerror="this.parentElement.innerHTML='📰'">`
+              : '📰'}
+          </div>
+          <div class="post-card-body">
+            <div class="post-card-meta">
+              <span class="tag">Post</span>
+              <span>${formatDate(post.createdAt)}</span>
+              ${post.updatedAt ? '<span>· edited</span>' : ''}
+            </div>
+            <h2 class="post-card-title">${escapeHtml(post.title)}</h2>
+            <p class="post-card-excerpt">${escapeHtml(excerpt(post.content))}</p>
+            <span class="read-more">Read more →</span>
+          </div>
+        </article>
+      `).join('');
+    }
+
+    /* ── Init ──────────────────────────────────────── */
+    document.addEventListener('DOMContentLoaded', () => {
+      renderPosts();
+
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('created') === '1') {
+        showToast('✅ Post published!', 'success');
+        history.replaceState({}, '', 'index.html');
+      }
+      if (params.get('deleted') === '1') {
+        showToast('🗑️ Post deleted.', '');
+        history.replaceState({}, '', 'index.html');
+      }
+    });
+  </script>
+
+</body>
+</html>
