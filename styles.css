@@ -605,3 +605,4 @@ footer span { color: var(--gold); }
 @media (min-width: 769px) and (max-width: 1024px) {
   .posts-grid { grid-template-columns: repeat(2, 1fr); }
 }
+/* responsive styles complete */
