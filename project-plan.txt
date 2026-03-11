@@ -1,0 +1,75 @@
+Dynamic Blog Website - Project Plan
+=====================================
+Author: Anesh Maharaj
+Course: CPAN-134 Web Programming and Design
+Date: March 2026
+
+PROJECT OVERVIEW
+----------------
+A dynamic, multi-page blog website with full CRUD (Create, Read, Update, Delete)
+functionality. Blog post data is stored in the browser's local storage using JavaScript.
+The site is responsive and works across mobile, tablet, and desktop devices.
+
+PROJECT STRUCTURE
+-----------------
+/dynamic-blog-website
+  index.html        -> Homepage: lists all blog posts from localStorage
+  new-post.html     -> Create Post: form to add a new blog post
+  post.html         -> View/Edit/Delete Post: view a post and edit or delete it
+  styles.css        -> Shared stylesheet with responsive design
+  project-plan.txt  -> This file
+
+PAGES & FUNCTIONALITY
+---------------------
+1. index.html (Homepage)
+   - Loads all posts from localStorage
+   - Displays each post as a card with title, date, and excerpt
+   - Links to individual post pages
+   - Button to navigate to new-post.html
+
+2. new-post.html (Create Post)
+   - Form with: Title (text), Content (textarea), Image URL (optional)
+   - Validates that title and content are not empty
+   - Saves new post to localStorage with a unique ID and timestamp
+   - Redirects to homepage on success
+
+3. post.html (View / Edit / Delete Post)
+   - Reads post ID from URL query parameter (?id=...)
+   - Loads matching post from localStorage and displays it
+   - Edit button toggles editable fields for title and content
+   - Save button updates the post in localStorage
+   - Delete button removes the post from localStorage and redirects home
+
+TECHNOLOGY STACK
+----------------
+- HTML5 (semantic markup)
+- CSS3 (Flexbox, Grid, media queries for responsiveness)
+- Vanilla JavaScript (localStorage, DOM manipulation, URL params)
+- Git and GitHub (version control and hosting)
+
+VERSION CONTROL PLAN
+--------------------
+Branches:
+  main                   -> stable production code
+  feature/homepage       -> Part 2: homepage and post listing
+  feature/new-post       -> Part 3: create post functionality
+  feature/view-edit-post -> Part 4: view and edit functionality
+  feature/delete-post    -> Part 5: delete functionality
+  feature/styling        -> Bonus: enhanced responsive CSS
+
+Each feature branch will be merged into main via a Pull Request on GitHub.
+
+DESIGN SYSTEM
+-------------
+- Theme: Clean, modern, tech-focused
+- Colors: Deep Navy (#0a0f1e), Gold (#f0b429), White (#f8fafc), Dark Surface (#111827)
+- Fonts: Space Grotesk (headings), Inter (body)
+
+TIMELINE
+--------
+Part 1: Repository setup and project plan
+Part 2: Homepage and post listing
+Part 3: New post form and localStorage save
+Part 4: Post view and edit
+Part 5: Delete functionality and final testing
+Bonus:  Responsive styling enhancements
